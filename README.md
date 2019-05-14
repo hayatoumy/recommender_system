@@ -9,7 +9,7 @@ If the logged-in user turned out to be one of the biggest reviewers; that is, ha
 **Explanation** <br />
 Why would I compare only to most similar user, and not the most three similar users or so? <br /> 
 There's a valid point for using next most similar users, and I might do this to the model, while controlling for how many perfumes to recommend to not overwhelm the customer or lose credibility; but I was afraid this will give a long stretch for predictions that might not be relevant at that point; since it's cosine similarities, on top of sentiment analysis, based on Vader. 
-And the logged-in user might end up hating it, and thus losing faith in our recommendations, and instead of being a feature, it'll become a nuisance. 
+And the logged-in user might end up hating it, and thus losing faith in our recommendations, and instead of being a feature, it'll become a nuisance. <br />
 **Extension** <br />
 Of course, when deploying this model to the fragrance website, recommendations should always include recent launched perfumes, and new arrivals. These perfumes, however, need to share the same notes in the most liked perfumes by the logged-in user, or other features, like wearability in a certain season, etc. <br />
 This latter case has not been treated for in this project, and that would be its own project, or an extension to this one in the near future. 
@@ -22,4 +22,10 @@ VADER (Valence Aware Dictionary and sEntiment Reasoner) is a lexicon and rule-ba
 
 #### Other Mechanics to Be Attempted Next, or in Later Projects:
 1. Manually label few hundreds or thousands reviews. Make a model to predict ratings for the rest of the reviews based on text analysis. Then run the cosine similarity recommenders again. <br />  Evaluate performance by field and content knowledge to assess goodness of recommendations.
-2. Exploring how nueral networks for unspervised learning for text data can be implemented to group together similar reviews about each perfume, thus grouping together similar users. Can be done to items as well. 
+2. Exploring how neural networks for unspervised learning for text data can be implemented to group together similar reviews about each perfume, thus grouping together similar users. Can be done to items as well. 
+
+#### PostScript: Getting The Data
+Scraping: I gathered links of most popular designers, then for each designer, I collected links to the perfumes they made, then went to each page and collected the perfume name, reviews, and customer id without their names. <br />
+I ended up with over 5000 links, for ease of handeling, I randomly selected 500 of these links to run the recommender on. That still yielded 33036 reviews. <br />
+This recommender will perform better when having the whole dataset, which I intend to do in the near future. <br />
+**Notes on the reviews text:** In addition to cleaning up the review text of the unwanted characters, there were many reviews not written in English. It is up to you to consider this a problem or not, VaderSentiment would consider these reviews of a neutral statement, I can filter them out based on neutral statment now; or I can drop these reviews after detecting the langauge, which can be done with [the language detection library](https://pypi.org/project/langdetect/) but be careful that it will missclassify some reviews as  non-English if the text isn't squeaky clean, if you have strange characters or spaces, it won't do as well. <br />
