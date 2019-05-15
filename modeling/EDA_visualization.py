@@ -52,16 +52,17 @@ df['vader_sentiment'] = Vader_sentiment # sentiment is a float between -1 and 1,
 #-------
 import matplotlib.pyplot as plt
 
-custom_stop_words = list(ENGLISH_STOP_WORDS) + ['just', 'perfume', 'fragrance', 'don', '10', 'think', 'note', '2018', '2013', 
-                                               'fragrances', 'smells', 'smell', 'scent', '2017', 'feel', 'way', 'little', 
-                                               'really', 'bottle', '2016', '2014', 'say', 'little', '2015', '2012']
-
 def plot_words(df):
     """
     Enter the dataframe you want, get a barplot of the most 25 frequent words, according to CountVectorizer
     """
     
     from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, ENGLISH_STOP_WORDS
+    
+    custom_stop_words = list(ENGLISH_STOP_WORDS) + ['just', 'perfume', 'fragrance', 'don', '10', 'think', 'note', '2018', '2013', 
+                                               'fragrances', 'smells', 'smell', 'scent', '2017', 'feel', 'way', 'little', 
+                                               'really', 'bottle', '2016', '2014', 'say', 'little', '2015', '2012']
+    
     cv = CountVectorizer(stop_words=custom_stop_words, min_df=.01)
 
     sparse_matrix = cv.fit_transform(df['review'])
