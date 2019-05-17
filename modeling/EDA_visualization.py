@@ -13,27 +13,41 @@ df.rename(columns = {'review_test' : 'review',
 df = df.sample(frac = 1)
 
 # reset the indicies to start from zero
-df.reset_index(col_level = 0, inplace = True)
-df.drop('index', axis = 1, inplace = True)
+df.reset_index(col_level = 0, drop = True ,inplace = True)
 
 # cleaning the reviews text
 df['review'] = df['review'].map(lambda x: x[20:].strip().replace('\n',''))
 
+
+###
 # dropping all non-English reviews, as they cause information loss by having many neutral ones
-from langdetect import detect 
+# keep only alphabetical words
+def letters(string):
+    import re
+    return re.sub(r"[^A-Za-z]+", ' ', string) 
 
-non_eng_indicies = []
-for review in df['review']:
-    if detect(review[:90])!='en':
-        non_eng_indicies.append(list(df.loc[df['review']==review, :].index)) #list of indicies of non-english reviews
-        
-non_eng_indicies_list = [] # to extract the list of lists above into one list of indicies
-for k in non_eng_indicies:
-    for i in k:
-        non_eng_indicies_list.append(i)
-        
-df.drop(non_eng_indicies_list, inplace = True)
+# executing the function letters()
+review_list = []
+for r in df['review']:
+    review_list.append(letters(r))
+    
+df['review'] = review_list # replace with the only alphabet reviews
 
+# get indicies of non-english reviews
+def drop_non_eng(text_series):
+    from langdetect import detect
+    
+    for r in text_series:
+        if detect(r) != 'en':
+            df.drop(df.loc[text_series == r, :].index, axis = 0, inplace = True)
+    return df
+
+from time import time 
+t0 = time()
+df = drop_non_eng(df['review']) # the core code
+print(f"it takes {round( (time()-t0)/60 ,1)} minutes to drop non-English reviews")
+
+   
 ## VADER SENTIMENT ANALYSIS, TO CREATE THE RATINGS FOR EACH REVIEW
 #---------------------------------------------------------------------
 
@@ -51,6 +65,7 @@ df['vader_sentiment'] = Vader_sentiment # sentiment is a float between -1 and 1,
 ## EDA
 #-------
 import matplotlib.pyplot as plt
+%config InlineBackend.figure_format = 'retina'
 
 def plot_words(df):
     """
@@ -59,9 +74,8 @@ def plot_words(df):
     
     from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, ENGLISH_STOP_WORDS
     
-    custom_stop_words = list(ENGLISH_STOP_WORDS) + ['just', 'perfume', 'fragrance', 'don', '10', 'think', 'note', '2018', '2013', 
-                                               'fragrances', 'smells', 'smell', 'scent', '2017', 'feel', 'way', 'little', 
-                                               'really', 'bottle', '2016', '2014', 'say', 'little', '2015', '2012']
+    custom_stop_words = list(ENGLISH_STOP_WORDS) + ['just', 'perfume', 'fragrance', 'don', 'think', 'note', 'notes', 
+                                               'fragrances', 'smells', 'smell', 'scent', 'bottle']
     
     cv = CountVectorizer(stop_words=custom_stop_words, min_df=.01)
 
@@ -69,7 +83,7 @@ def plot_words(df):
     features_df = pd.DataFrame(sparse_matrix.todense(), 
                               columns = cv.get_feature_names())
 
-    return features_df.sum().sort_values(ascending = False).head(25).plot(kind = 'barh', figsize = (8,8));
+    return features_df.sum().sort_values(ascending = False).head(15).plot(kind = 'barh', figsize = (8,8));
 
 
 # What people mentioned the most (most frequent words) in each category pos/neg/neutral
@@ -78,6 +92,31 @@ neg_reviews_df = df.loc[df['vader_sentiment']<0 , :]
 neutral_reviews_df = df.loc[df['vader_sentiment'] == 0, :]
 
 # generate barplots for most frequent words in each dataframe
-plot_words(df)
-plot_words(pos_reviews_df)
-plot_words(neg_reviews_df)
+plot_words(df);
+plt.title('most used words'.title(), fontsize = 14);
+
+plot_words(pos_reviews_df);
+plt.title('most used words in positive reviews'.title(), fontsize = 14);
+
+plot_words(neg_reviews_df);
+plt.title('most used words in negative reviews'.title(), fontsize = 14);
+
+plot_words(neutral_reviews_df);
+plt.title('most used words in neutral reviews'.title(), fontsize = 14);
+
+
+# average most liked and most hated 10 perfumes, according to reviewers
+# positive
+best_liked_10 = pos_reviews_df['vader_sentiment'].groupby(pos_reviews_df['perfume_name']).mean().sort_values(ascending = False)[:10].to_frame()
+# negative
+worst_hated_10 = neg_reviews_df['vader_sentiment'].groupby(neg_reviews_df['perfume_name']).mean().sort_values(ascending = False)[:10].to_frame()
+# neutral
+top_neutral_10 = neutral_reviews_df['vader_sentiment'].groupby(neutral_reviews_df['perfume_name']).mean().sort_values(ascending = False)[:10].to_frame()
+
+best_liked_10.plot(kind = 'barh', title = 'most liked perfumes'.title());
+worst_hated_10.plot(kind = 'barh', title = 'most hated perfumes'.title());
+top_neutral_10.plot(kind = 'barh', title = 'most neutral perfumes'.title())
+
+# most reviewed perfumes
+most_reviewed_10 = df['perfume_name'].value_counts().sort_values(ascending = False)[:10]
+most_reviewed_10.plot(kind = 'barh', title = 'most reviewed perfumes'.title());
